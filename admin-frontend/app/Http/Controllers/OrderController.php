@@ -25,9 +25,7 @@ class OrderController extends Controller
                 ->addIndexColumn()
                 ->addColumn('aksi', function ($row) {
                     return '
-                        <a href="'.route('admin.orders.show', $row['id']).'" class="btn btn-info btn-sm" onclick="modalAction(this.href); return false;">Detail</a>
-                        <a href="'.route('admin.orders.verify', $row['id']).'" class="btn btn-warning btn-sm" onclick="modalAction(this.href); return false;">Verifikasi</a>
-                        <a href="'.route('admin.orders.confirm', $row['id']).'" class="btn btn-danger btn-sm" onclick="modalAction(this.href); return false;">Hapus</a>
+                        <a href="' . route('admin.orders.show', $row['id']) . '" class="btn btn-info btn-sm" onclick="modalAction(this.href); return false;">Detail</a>
                     ';
                 })
                 ->rawColumns(['aksi'])
@@ -40,38 +38,58 @@ class OrderController extends Controller
     {
         $response = Http::get("{$this->baseUrl}/{$id}");
         $order = $response->successful() ? $response->json() : null;
+
+        if (!$order) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
         return view('admin.orders.show', compact('order'));
     }
 
-    public function verify($id)
-    {
-        $response = Http::get("{$this->baseUrl}/{$id}");
-        $order = $response->successful() ? $response->json() : null;
-        return view('admin.orders.verify', compact('order'));
-    }
+    // public function updateStatus(Request $request, $id)
+    // {
+    //     $response = Http::put("{$this->baseUrl}/{$id}", [
+    //         'status' => $request->status
+    //     ]);
+
+    //     if ($response->successful()) {
+    //         return redirect()->route('admin.orders.index')->with('success', 'Status berhasil diperbarui');
+    //     }
+
+    //     return back()->with('error', 'Gagal memperbarui status');
+    // }
 
     public function updateStatus(Request $request, $id)
-    {
-        $response = Http::put("{$this->baseUrl}/{$id}", [
-            'status' => $request->status
-        ]);
-        return $response->successful()
-            ? redirect()->route('admin.orders.index')->with('success', 'Status berhasil diperbarui')
-            : back()->with('error', 'Gagal memperbarui status');
+{
+    // Ambil data dari service
+    $orderResponse = Http::get("{$this->baseUrl}/{$id}");
+
+    if (!$orderResponse->successful()) {
+        return back()->with('error', 'Pesanan tidak ditemukan');
     }
 
-    public function confirm($id)
-    {
-        $response = Http::get("{$this->baseUrl}/{$id}");
-        $order = $response->successful() ? $response->json() : null;
-        return view('admin.orders.confirm_ajax', compact('order'));
+    $order = $orderResponse->json();
+
+    // Cegah ubah status jika sudah final
+    if (in_array($order['status'], ['selesai', 'dibatalkan'])) {
+        return back()->with('error', 'Status tidak dapat diubah karena sudah final');
     }
 
-    public function delete($id)
-    {
-        $response = Http::delete("{$this->baseUrl}/{$id}");
-        return $response->successful()
-            ? response()->json(['status' => true, 'message' => 'Order dihapus'])
-            : response()->json(['status' => false, 'message' => 'Gagal menghapus order']);
+    // Validasi input status
+    $validated = $request->validate([
+        'status' => 'required|in:diproses,selesai,dibatalkan'
+    ]);
+
+    // Kirim PUT request ke order-service
+    $update = Http::put("{$this->baseUrl}/{$id}", [
+        'status' => $validated['status']
+    ]);
+
+    if ($update->successful()) {
+        return redirect()->route('admin.orders.index')->with('success', 'Status berhasil diperbarui');
     }
+
+    return back()->with('error', 'Gagal memperbarui status');
+}
+
 }

@@ -16,57 +16,57 @@ class OrderController extends Controller
     }
 
     // Simpan pesanan baru
-    public function store(Request $request)
-    {
-        // Validasi data
-        $validator = Validator::make($request->all(), [
-            'nama_pemesan'   => 'required|string|max:100',
-            'alamat'         => 'required|string|max:255',
-            'product_id'     => 'required|integer',
-            'product_nama'   => 'required|string|max:100',
-            'jumlah'         => 'required|integer|min:1',
-            'total_harga'    => 'required|integer|min:1',
-            'bukti_transfer' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB max
-        ]);
+    // di file: App\Http\Controllers\Api\OrderController.php
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status'    => false,
-                'message'   => 'Validasi gagal',
-                'msgField'  => $validator->errors(),
-            ], 422);
-        }
+public function store(Request $request)
+{
+    // Validasi
+    $validator = Validator::make($request->all(), [
+        'nama_pemesan'   => 'required|string|max:100',
+        'alamat'         => 'required|string|max:255',
+        'product_id'     => 'required|integer',
+        'product_nama'   => 'required|string|max:100',
+        'jumlah'         => 'required|integer|min:1',
+        'total_harga'    => 'required|integer|min:1',
+        'bukti_transfer' => 'required|file|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        // Upload gambar (WAJIB ADA)
-        $file = $request->file('bukti_transfer');
-        $buktiTransferPath = $file->store('bukti_transfer', 'public'); // Simpan di storage/app/public/bukti_transfer
-
-
-        // // Upload gambar jika ada
-        // $buktiTransferPath = null;
-        // if ($request->hasFile('bukti_transfer')) {
-        //     $file = $request->file('bukti_transfer');
-        //     $buktiTransferPath = $file->store('bukti_transfer', 'public'); // disimpan di storage/app/public/bukti_transfer
-        // }
-
-        // Simpan ke DB
-        $order = Order::create([
-            'nama_pemesan'   => $request->nama_pemesan,
-            'alamat'         => $request->alamat,
-            'product_id'     => $request->product_id,
-            'product_nama'   => $request->product_nama,
-            'jumlah'         => $request->jumlah,
-            'total_harga'    => $request->total_harga,
-            'bukti_transfer' => $buktiTransferPath,
-            'status'         => 'menunggu',
-        ]);
-
+    if ($validator->fails()) {
         return response()->json([
-            'status'  => true,
-            'message' => 'Pesanan berhasil disimpan',
-            'data'    => $order
-        ]);
+            'status'    => false,
+            'message'   => 'Validasi gagal',
+            'msgField'  => $validator->errors(),
+        ], 422);
     }
+
+    // ✅ Upload bukti transfer & simpan nama file
+    $buktiTransferPath = null;
+    if ($request->hasFile('bukti_transfer')) {
+        $file = $request->file('bukti_transfer');
+        $filename = time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/bukti_transfer', $filename);
+        $buktiTransferPath = $filename; // hanya nama file
+    }
+
+    // ✅ Simpan ke database
+    $order = Order::create([
+        'nama_pemesan'   => $request->nama_pemesan,
+        'alamat'         => $request->alamat,
+        'product_id'     => $request->product_id,
+        'product_nama'   => $request->product_nama,
+        'jumlah'         => $request->jumlah,
+        'total_harga'    => $request->total_harga,
+        'bukti_transfer' => $buktiTransferPath,
+        'status'         => 'menunggu',
+    ]);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Pesanan berhasil disimpan',
+        'data'    => $order
+    ]);
+}
+
 
     // Detail satu pesanan
     public function show($id)
@@ -83,7 +83,7 @@ class OrderController extends Controller
     }
 
     // Update pesanan
-        public function updateStatus(Request $request, $id)
+        public function update(Request $request, $id)
     {
         $order = Order::find($id);
         if (!$order) {

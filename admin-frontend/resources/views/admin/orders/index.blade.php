@@ -142,7 +142,7 @@ $(document).ready(function () {
                     width: '5%'
                 },
                 { data: 'nama_pemesan', name: 'nama_pemesan', width: '20%' },
-                { data: 'nama_produk', name: 'nama_produk', width: '20%' },
+                { data: 'product_nama', name: 'product_nama', width: '20%' },
                 { data: 'jumlah', name: 'jumlah', className: 'text-center', width: '10%' },
                 {
                     data: 'total_harga',
@@ -178,7 +178,6 @@ $(document).ready(function () {
                     render: function(data, type, row) {
                         return `
                             <a href="/admin/order/${data}" class="btn btn-sm btn-info" onclick="modalAction(this.href); return false;">Detail</a>
-                            <a href="/admin/order/${data}/verify" class="btn btn-sm btn-success" onclick="modalAction(this.href); return false;">Verifikasi</a>
                         `;
                     }
                 }

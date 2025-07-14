@@ -1,4 +1,4 @@
-<div class="modal-dialog" role="document">
+{{-- <div class="modal-dialog" role="document">
     <div class="modal-content">
         <div class="modal-header bg-danger">
             <h5 class="modal-title">Konfirmasi Hapus</h5>
@@ -34,4 +34,4 @@ function deleteOrder(id) {
         }
     });
 }
-</script>
+</script> --}}

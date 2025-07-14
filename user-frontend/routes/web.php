@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\UserOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +15,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Halaman form pemesanan
+Route::get('/order', [UserOrderController::class, 'showForm'])->name('user.order.form');
+
+// Proses submit pesanan
+Route::post('/order', [UserOrderController::class, 'store'])->name('order.store');
+
+// Halaman utama redirect ke form
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('user.order.form');
 });
